@@ -18,7 +18,7 @@ def one_hot(x):
 		return [1,0]
 
 # Generate train,test data and write to file (only if required)
-def populate(n = 32,s = 100000):
+def populate(n = 32,s = 1000000):
 	should = False
 	if not os.path.isdir("XOR"):
 		os.mkdir("XOR")

@@ -23,8 +23,8 @@ def train_and_evaluate():
 	# Give life to nodes
 	sess.run(init)
 	# Train in 800 epochs, each with a batch size of 100
-	for i in range(800):
-	  batch_xs, batch_ys = XOR.next_batch(100)
+	for i in range(4000):
+	  batch_xs, batch_ys = XOR.next_batch(200)
 	  sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
 	# Calculate accuracy
 	correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
