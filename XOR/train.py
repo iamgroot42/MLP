@@ -22,7 +22,7 @@ def train_and_evaluate():
 	sess = tf.Session()
 	# Give life to nodes
 	sess.run(init)
-	# Train in 800 epochs, each with a batch size of 100
+	# Train in 4000 epochs, each with a batch size of 200
 	for i in range(4000):
 	  batch_xs, batch_ys = XOR.next_batch(200)
 	  sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
