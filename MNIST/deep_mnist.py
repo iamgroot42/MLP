@@ -62,7 +62,6 @@ b_fc2 = bias_variable([10])
 
 y_conv = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
 
-
 # Train network
 cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices=[1]))
 train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
