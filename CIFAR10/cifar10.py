@@ -24,6 +24,12 @@ def conv2d(x, W):
   return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
 
+def one_hot(a,b):
+	ret = np.zeros(b)
+	ret[a-1] = 1
+	return ret
+
+
 def extract(n):
 	x = []	
 	y = []
@@ -32,9 +38,18 @@ def extract(n):
 		p,q = data_labels['data'], data_labels['labels']
 		x.extend(p)
 		y.extend(q)
+	y = [one_hot(c,10) for c in y]
 	# Seperate into R,G,B channels (row-major)
 	for i in range(len(x)):
-		x[i] = np.reshape(x[i], (3,32,32))
+		one_third = len(x[i])/3
+		temp = [[0] * 32] * 32
+		for j in range(32):
+			for k in range(32):
+				r = x[i][j+32*k]
+				g = x[i][j+32*k + one_third]
+				b = x[i][j+32*k + 2*one_third]
+				temp[j][k] = [r,g,b]
+		x[i] = np.array(temp)
 	return x,y
 
 
@@ -44,20 +59,20 @@ def next_batch(x, y, size, counter = 0):
 
 
 def train(X,Y, num_classes):
-	sess = tf.Session()
+	sess = tf.InteractiveSession()
 	# Convolution
-	x = tf.placeholder(tf.float32, shape = [3, 32, 32])
+	x = tf.placeholder(tf.float32, shape = [None, 32, 32, 3])
 	y_ = tf.placeholder(tf.float32, shape = [None, 10])
 	W_conv1 = weight_variable([5, 5, 3, 64])
-	b_conv1 = bias_variable([64],0)
+	b_conv1 = bias_variable([64],0.0)
 	h_conv1 = tf.nn.relu(tf.nn.conv2d(x, W_conv1, strides=[1, 1, 1, 1], padding='SAME') + b_conv1)
 	# Pool
 	h_pool1 = tf.nn.max_pool(h_conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding='SAME')
 	# Normalize
-	norm1 = tf.nn.lrn(pool1, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75)
+	norm1 = tf.nn.lrn(h_pool1, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75)
 	# Convolution
 	W_conv2 = weight_variable([5, 5, 64, 64])
-	b_conv2 = bias_variable([64],0)
+	b_conv2 = bias_variable([64],0.0)
 	h_conv2 = tf.nn.relu(tf.nn.conv2d(norm1, W_conv2, strides=[1, 1, 1, 1], padding='SAME') + b_conv2)
 	# Normalize
 	norm2 = tf.nn.lrn(h_conv2, 4, bias=1.0, alpha=0.001 / 9.0, beta=0.75)
@@ -86,18 +101,23 @@ def train(X,Y, num_classes):
 	
 	counter = 0
 	for i in range(250):
-	  batch = train.next_batch(X,Y,200,counter)
-	  counter += 200
-	  if i%400 == 0:
-	    train_accuracy = accuracy.eval(feed_dict={
-	        x:batch[0], y_: batch[1], keep_prob: 1.0})
-	    print("step %d, training accuracy %g"%(i, train_accuracy))
-	  train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
-	
+	  try:
+	    batch = next_batch(X,Y,200,counter)
+	    counter += 200
+	    if i%5 == 0:
+	      train_accuracy = accuracy.eval(feed_dict={
+	          x:batch[0], y_: batch[1]})
+	      print("step %d, training accuracy %g"%(i, train_accuracy))
+	    train_step.run(feed_dict={x: batch[0], y_: batch[1]})
+	  except Exception,e:
+	  	print e
+	  	exit()
 	# print("test accuracy %g"%accuracy.eval(feed_dict={
 	    # x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
 
 
 if __name__ == "__main__":
+	print "Extracting data.."
 	x,y = extract(5)	
+	print "Training model.."
 	train(x,y,len(unpickle("CIFAR10_data/batches.meta")['label_names']))
